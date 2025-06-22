@@ -5,7 +5,6 @@ import os
 from dotenv import load_dotenv
 from langfuse.langchain import CallbackHandler
 
-# Load environment variables from .env file
 load_dotenv()
 
 langfuse = Langfuse(
