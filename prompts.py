@@ -28,6 +28,11 @@ prompts = {
     Input: "Your account has been compromised. Please click the link to verify your account. https://bit.ly/3QaSxy4"
     Output: Classification: 'smishing'
     Explanation: The SMS contains a suspicious link and requests for personal information.
+
+    #Example 2
+    Input: "Hey, are we still on for dinner tonight at 7?"
+    Output: Classification: 'benign'
+    Explanation: The SMS is a friendly reminder for a dinner.
     """,
     "description": "With format example"
     }

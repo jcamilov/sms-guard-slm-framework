@@ -18,8 +18,9 @@ langfuse = Langfuse(
     host=os.getenv("LANGFUSE_HOST")
 )
 
+model_name = "gemma-3n-e4b-it"
 llm = ChatGoogleGenerativeAI(
-    model="gemma-3n-e4b-it",
+    model=model_name,
     google_api_key=os.getenv("GOOGLE_API_KEY"),
     temperature=0.7
 )
@@ -41,8 +42,7 @@ def run_evaluation():
     """
     Runs the evaluation of SMS classification prompts against a Langfuse dataset.
     """
-    dataset_name = "simple_test_dataset"  
-    model_name = llm.model
+    dataset_name = "smallTestSet"  
 
     print(f"Fetching dataset '{dataset_name}' from Langfuse...")
     try:
@@ -63,8 +63,12 @@ def run_evaluation():
         # Iterate over each item in the dataset
         for item in dataset.items:
             # item.run() creates a trace and links it to the dataset item.
-            # it returns a context manager that yields the run object.
-            with item.run(name=f"run-{prompt_name}-{item.id}") as run:
+            # It requires `run_name` to group evaluations.
+            # `run_metadata` is passed to add custom metadata to the run item.
+            with item.run(
+                run_name=prompt_name,
+                tags=[prompt_name, model_name]
+            ) as run:
                 # Format the prompt with the SMS text from the dataset item
                 formatted_prompt = prompt_data["prompt"].format(sms_text=item.input)
                 message = HumanMessage(content=formatted_prompt)
@@ -83,14 +87,18 @@ def run_evaluation():
                         # Parse the output
                         parsed_output = parse_classification(response.content)
 
+                        # Map numeric expected output to string classification
+                        # "1" is considered "smishing", anything else is "benign"
+                        expected_classification = "smishing" if item.expected_output == "1" else "benign"
+
                         # Score the run directly
                         run.score(
                             name="classification-accuracy",
-                            value=1 if parsed_output == item.expected_output else 0,
-                            comment=f"Model classified as {parsed_output}, expected {item.expected_output}"
+                            value=1 if parsed_output == expected_classification else 0,
+                            comment=f"Model classified as {parsed_output}, expected {expected_classification}"
                         )
 
-                        print(f"  - SMS: '{item.input[:30]}...' -> Classified as: {parsed_output} (Expected: {item.expected_output})")
+                        print(f"  - SMS: '{item.input[:30]}...' -> Classified as: {parsed_output} (Expected: {expected_classification})")
                         
                         break  # Success, exit retry loop
 
@@ -98,7 +106,7 @@ def run_evaluation():
                         # Handle potential rate limiting or other API errors
                         print(f"  - ⚠️ Attempt {attempt + 1} failed: {e}")
                         if attempt < retries - 1:
-                            print(f"      Retrying in {delay} seconds...")
+                            print(f"    Retrying in {delay} seconds...")
                             time.sleep(delay)
                             delay *= 2  # Exponential backoff
                         else:
