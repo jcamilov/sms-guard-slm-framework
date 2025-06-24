@@ -1,3 +1,7 @@
+# NOTE: unfortunatelly, Langfuse python SDK does not support tags so it is not possible
+# to do good analysis of the results on the platform (dashboard).
+# I leave this script here for reference, but it is not used in the project.
+
 from langfuse import Langfuse
 from langfuse.langchain import CallbackHandler
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -6,7 +10,7 @@ import os
 from dotenv import load_dotenv
 import time
 import re
-from prompts import prompts
+from prompts.prompts import prompts
 
 load_dotenv()
 

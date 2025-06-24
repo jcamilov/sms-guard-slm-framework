@@ -6,8 +6,8 @@ import time
 import re
 import csv
 from datetime import datetime
-from prompts import prompts
-from small_test_dataset import small_test_dataset
+from prompts.prompts import prompts
+from datasets.small_test_dataset import small_test_dataset
 
 load_dotenv()
 
