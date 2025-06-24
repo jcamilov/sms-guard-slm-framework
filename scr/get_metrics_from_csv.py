@@ -1,9 +1,10 @@
 import csv
 from collections import Counter
 from sklearn.metrics import f1_score
+import os
 
 # Nombre del archivo CSV de resultados (hardcoded)
-CSV_FILENAME = 'small_test_dataset_experiment_results_20250624_095916.csv'
+CSV_FILENAME = os.path.join('experiment_results', 'small_test_dataset_experiment_results_20250624_095916.csv')
 MODEL_NAME = 'gemma-3n-e4b-it'
 
 # Etiquetas posibles
@@ -37,25 +38,50 @@ def compute_metrics(y_true, y_pred, positive_label="smishing", negative_label="b
     }
 
 def main():
-    y_true = []
-    y_pred = []
+    # Dictionary to store data for each prompt
+    prompt_data = {}
+    
     with open(CSV_FILENAME, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             # Solo consideramos filas que no sean error
             if row['model_classification'] not in ['ERROR', 'unclassified']:
-                y_true.append(row['original_classification'].strip().lower())
-                y_pred.append(row['model_classification'].strip().lower())
-    if not y_true:
+                prompt_name = row['prompt_name']
+                if prompt_name not in prompt_data:
+                    prompt_data[prompt_name] = {'y_true': [], 'y_pred': []}
+                
+                prompt_data[prompt_name]['y_true'].append(row['original_classification'].strip().lower())
+                prompt_data[prompt_name]['y_pred'].append(row['model_classification'].strip().lower())
+    
+    # Debug: Print what we found
+    print("Debug: Found prompts:", list(prompt_data.keys()))
+    for prompt_name, data in prompt_data.items():
+        print(f"Debug: {prompt_name} has {len(data['y_true'])} samples")
+    
+    if not prompt_data:
         print("No hay datos válidos para calcular métricas.")
         return
-    metrics = compute_metrics(y_true, y_pred)
-    # Mostrar resultados en formato tabla
+    
+    # Calculate metrics for each prompt
+    all_metrics = {}
+    for prompt_name, data in prompt_data.items():
+        if data['y_true']:  # Only if we have data for this prompt
+            all_metrics[prompt_name] = compute_metrics(data['y_true'], data['y_pred'])
+    
+    # Display results in comparison table
     print("\n+-------------------+--------------+--------------+--------------+--------------+--------------+--------------+")
-    print("|   Model           |    Acc       |    FS        |   TPR        |   TNR        |   FPR        |   FNR        |")
+    print("|   Prompt          |    Acc       |    FS        |   TPR        |   TNR        |   FPR        |   FNR        |")
     print("+-------------------+--------------+--------------+--------------+--------------+--------------+--------------+")
-    print(f"| {MODEL_NAME:<16}  | {metrics['Acc']*100:>10.2f}%  | {metrics['FS']*100:>10.2f}%  | {metrics['TPR']*100:>10.2f}%  | {metrics['TNR']*100:>10.2f}%  | {metrics['FPR']*100:>10.2f}%  | {metrics['FNR']*100:>10.2f}%  |")
+    
+    for prompt_name, metrics in all_metrics.items():
+        print(f"| {prompt_name:<16}  | {metrics['Acc']*100:>10.2f}%  | {metrics['FS']*100:>10.2f}%  | {metrics['TPR']*100:>10.2f}%  | {metrics['TNR']*100:>10.2f}%  | {metrics['FPR']*100:>10.2f}%  | {metrics['FNR']*100:>10.2f}%  |")
+    
     print("+-------------------+--------------+--------------+--------------+--------------+--------------+--------------+")
+    
+    # Show sample sizes for each prompt
+    print("\nSample sizes:")
+    for prompt_name, data in prompt_data.items():
+        print(f"{prompt_name}: {len(data['y_true'])} samples")
 
 if __name__ == "__main__":
     main() 
