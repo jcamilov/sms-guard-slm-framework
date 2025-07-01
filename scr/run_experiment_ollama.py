@@ -114,9 +114,10 @@ def run_evaluation():
                     # Make the LLM call
                     response = llm.invoke([message])
                     
-                    # Parse the output
-                    parsed_classification = parse_classification(response.content)
-                    parsed_explanation = parse_explanation(response.content)
+                    # Parse the output - Ollama returns string directly
+                    response_text = response if isinstance(response, str) else str(response)
+                    parsed_classification = parse_classification(response_text)
+                    parsed_explanation = parse_explanation(response_text)
                     
                     # Determine if classification is correct
                     is_correct = parsed_classification == sms_item['class']

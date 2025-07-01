@@ -1,4 +1,4 @@
-# sms-study
+# SMS-Guard - experiments framework
 
 This project is the framework to run experiments with different SLM against different propmts and SMS tagged datasets.
 The main idea is to compare and get to conclusion on what the best SLM and prompt combination is appropiate for the
