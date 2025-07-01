@@ -1,4 +1,4 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_community.llms import Ollama
 from langchain_core.messages import HumanMessage
 import os
 from dotenv import load_dotenv
@@ -18,10 +18,9 @@ load_dotenv()
 
 # --- LLM Initialization ---
 
-model_name = "gemma-3n-e4b-it"
-llm = ChatGoogleGenerativeAI(
+model_name = "gemma3n:e2b"  # You can change this to any model available in your Ollama installation
+llm = Ollama(
     model=model_name,
-    google_api_key=os.getenv("GOOGLE_API_KEY"),
     temperature=0.7
 )
 
@@ -55,7 +54,7 @@ def save_results_to_csv(results, filename=None):
     
     if filename is None:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"sms_experiment_results_{timestamp}.csv"
+        filename = f"ollama_sms_experiment_results_{timestamp}.csv"
     
     # Create full path in experiment_results folder
     filepath = os.path.join(experiment_results_dir, filename)
@@ -83,9 +82,9 @@ def save_results_to_csv(results, filename=None):
 
 def run_evaluation():
     """
-    Runs the evaluation of SMS classification prompts against the local dataset.
+    Runs the evaluation of SMS classification prompts against the local dataset using Ollama.
     """
-    print("Starting SMS classification experiment...")
+    print("Starting SMS classification experiment with Ollama...")
     print(f"Model: {model_name}")
     print(f"Dataset size: {len(small_test_dataset)} SMS messages")
     print(f"Number of prompts: {len(prompts)}")
@@ -108,7 +107,7 @@ def run_evaluation():
             message = HumanMessage(content=formatted_prompt)
 
             retries = 3
-            delay = 2  # seconds
+            delay = 1  # seconds (Ollama is typically faster than cloud APIs)
             
             for attempt in range(retries):
                 try:
@@ -144,7 +143,7 @@ def run_evaluation():
                     break  # Success, exit retry loop
 
                 except Exception as e:
-                    # Handle potential rate limiting or other API errors
+                    # Handle potential connection errors or other issues
                     print(f"    ⚠️ Attempt {attempt + 1} failed: {e}")
                     if attempt < retries - 1:
                         print(f"      Retrying in {delay} seconds...")
